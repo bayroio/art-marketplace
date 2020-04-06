@@ -35,7 +35,7 @@ module.exports = {
     plugins: [
         new html({
             template: './src/index.ejs',
-            title: 'Art marketplace',
+            title: 'CIIAN marketplace',
             hash: true
         })
     ]
