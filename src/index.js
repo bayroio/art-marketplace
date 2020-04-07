@@ -27,7 +27,7 @@ class Main extends React.Component {
         await this.setProvider()
         const newLedger = await this.deployNewLedger()
         await this.setExistingLedger(newLedger)
-        await this.setAssetArray()
+        //await this.setAssetArray()
     }
 
     // To set a metamask provider
@@ -50,17 +50,13 @@ class Main extends React.Component {
         await this.setState({ledger})
     }
 
-    async setAssetArray(description, image, name, price) {
-        const assets = await this.getUserBalance()
-        console.log('Assets ', assets)
+    async setAssetArray(idAsset, description, image, name, price) {
+        /*const assets = await this.getUserBalance()
         let assetArray = []
         // Generate an array for each asset to create the corresponding AgroProduct components
         for(let i = 0; i < assets; i++) {
             assetArray.push(i)
         }
-        console.log('Assets 1: ', assetArray)
-        //assetArray = assets
-        //console.log('Assets 2: ', assetArray)
         assetArray = assetArray.map(index => (
             <AgroProduct
                 assetId={index}
@@ -71,8 +67,30 @@ class Main extends React.Component {
                 price={price}
             />
         ))
-        console.log('Assets 3: ', assetArray)
-        await this.setState({assets: assetArray})
+        await this.setState({assets: assetArray})*/
+        await this.setState({assets: [...this.state.assets, (<AgroProduct assetId={idAsset} key={idAsset} description={description} image={image} name={name} price={price}/>)]})
+        
+    }
+
+    async getAssetArray() {
+        const assets = await this.getUserBalance()
+        let assetArray = []
+        // Generate an array for each asset to create the corresponding AgroProduct components
+        for(let i = 0; i < assets; i++) {
+            assetArray.push(i)
+        }
+        assetArray = this.state.assets.map(index => (
+            <AgroProduct
+                assetId={this.state.assets.assetId}
+                key={this.state.assets.key}
+                description={this.state.assets.description}
+                image={this.state.assets.image}
+                name={this.state.assets.name}
+                price={this.state.assets.price}
+            />
+        ))
+        //await this.setState({assets: assetArray})    
+        return assetArray 
     }
 
     // To get user ERC721 token balance
@@ -124,49 +142,16 @@ class Main extends React.Component {
     }
 
     // To deploy a new asset
-    async deployCebollaBlanca() {
+    async deployAgroAsset(nameAsset, descripcionAsset, priceAsset, imageAsset ) {
         const cert = new Cert({
             schema: schema88
         })
         // In your final application you'll want to dinamically generate the asset parameters to create new assets with different imprints
         const asset = {
-            description: 'Cebolla blanca muy bonita y picosita para los ojos',
-            image: 'http://127.0.0.1:8080/images/cebollablanca.png',
-            name: 'Cebolla Blanca',
-            price: '$10 la tonelada',
-        }
-        const imprint = await cert.imprint(asset)
-        console.log('New imprint', imprint)
-        const assetId = parseInt(await this.getUserBalance()) + 1
-        console.log('id', assetId)
-        await this.state.ledger.createAsset({
-            id: assetId,
-            imprint: imprint, // You must generate a new imprint for each asset
-            receiverId: web3.eth.accounts[0],
-            name: asset.name,
-            description: asset.description,
-            price: asset.price,
-        }).then(mutation => {
-            console.log('Creating new agro asset, this may take a while...')
-            return mutation.complete()
-        }).then(result => {
-            console.log('Deployed!')
-            this.setAssetArray(asset.description, asset.image, asset.name, asset.price) // Update the user interface to show the deployed asset
-        }).catch(e => {
-            console.log('Error', e)
-        })
-    }
-
-    async deployTomateSaladette() {
-        const cert = new Cert({
-            schema: schema88
-        })
-        // In your final application you'll want to dinamically generate the asset parameters to create new assets with different imprints
-        const asset = {
-            description: 'Tomate Saladette muy rojito y ovaladito',
-            image: 'http://127.0.0.1:8080/images/tomatesaladet.png',
-            name: 'Tomate Saladette',
-            price: '$20 la tonelada',
+            name: nameAsset,
+            description: descripcionAsset,
+            price: priceAsset,
+            image: imageAsset,
         }
         const imprint = await cert.imprint(asset)
         console.log('New imprint', imprint)
@@ -181,67 +166,7 @@ class Main extends React.Component {
             return mutation.complete()
         }).then(result => {
             console.log('Deployed!')
-            this.setAssetArray(asset.description, asset.image, asset.name, asset.price) // Update the user interface to show the deployed asset
-        }).catch(e => {
-            console.log('Error', e)
-        })
-    }
-
-    async deployLimonPersa() {
-        const cert = new Cert({
-            schema: schema88
-        })
-        // In your final application you'll want to dinamically generate the asset parameters to create new assets with different imprints
-        const asset = {
-            description: 'Limón jugosito y redondito',
-            image: 'http://127.0.0.1:8080/images/limonpersa.jpg',
-            name: 'Limón Persa',
-            price: '$30 la tonelada',
-        }
-        const imprint = await cert.imprint(asset)
-        console.log('New imprint', imprint)
-        const assetId = parseInt(await this.getUserBalance()) + 1
-        console.log('id', assetId)
-        await this.state.ledger.createAsset({
-            id: assetId,
-            imprint: imprint, // You must generate a new imprint for each asset
-            receiverId: web3.eth.accounts[0]
-        }).then(mutation => {
-            console.log('Creating new agro asset, this may take a while...')
-            return mutation.complete()
-        }).then(result => {
-            console.log('Deployed!')
-            this.setAssetArray(asset.description, asset.image, asset.name, asset.price)  // Update the user interface to show the deployed asset
-        }).catch(e => {
-            console.log('Error', e)
-        })
-    }
-
-    async deployGarbanzo() {
-        const cert = new Cert({
-            schema: schema88
-        })
-        // In your final application you'll want to dinamically generate the asset parameters to create new assets with different imprints
-        const asset = {
-            description: 'Garbanzo muy chiquito y oloroso',
-            image: 'http://127.0.0.1:8080/images/garbanzo.jpg',
-            name: 'Garbanzo',
-            price: '$5 la tonelada',
-        }
-        const imprint = await cert.imprint(asset)
-        console.log('New imprint', imprint)
-        const assetId = parseInt(await this.getUserBalance()) + 1
-        console.log('id', assetId)
-        await this.state.ledger.createAsset({
-            id: assetId,
-            imprint: imprint, // You must generate a new imprint for each asset
-            receiverId: web3.eth.accounts[0]
-        }).then(mutation => {
-            console.log('Creating new agro asset, this may take a while...')
-            return mutation.complete()
-        }).then(result => {
-            console.log('Deployed!')
-            this.setAssetArray(asset.description, asset.image, asset.name, asset.price)  // Update the user interface to show the deployed asset
+            this.setAssetArray(assetId, asset.description, asset.image, asset.name, asset.price)  // Update the user interface to show the deployed asset
         }).catch(e => {
             console.log('Error', e)
         })
@@ -253,11 +178,11 @@ class Main extends React.Component {
                 <h1>CIIAN Marketplace</h1>
                 <p>In this marketplace you can deploy unique agro products to the blockchain.</p>
                 <div className="assets-container">{this.state.assets}</div>
-                <button className="margin-right" onClick={() => { this.deployCebollaBlanca()}}>Launch Agro Product: Cebolla Blanca</button>
-                <button className="margin-right" onClick={() => { this.deployTomateSaladette()}}>Launch Agro Product: Tomate Saladette</button>
-                <button className="margin-right" onClick={() => { this.deployLimonPersa()}}>Launch Agro Product: Limon Persa</button>
-                <button className="margin-right" onClick={() => { this.deployGarbanzo()}}>Launch Agro Product: Garbanzo</button>
-                <button onClick={() => { this.setAssetArray()}}>Get All Agro Products</button>
+                <button className="margin-right" onClick={() => { this.deployAgroAsset('Cebolla Blanca', 'Cebolla blanca muy bonita y picosita para los ojos', '$10 la tonelada', 'http://127.0.0.1:8080/images/cebollablanca.png')}}>Launch Agro Product: Cebolla Blanca</button>
+                <button className="margin-right" onClick={() => { this.deployAgroAsset('Tomate Saladette', 'Tomate Saladette muy rojito y ovaladito', '$20 la tonelada', 'http://127.0.0.1:8080/images/tomatesaladet.png')}}>Launch Agro Product: Tomate Saladette</button>
+                <button className="margin-right" onClick={() => { this.deployAgroAsset('Limón Persa', 'Limón jugosito y redondito', '$30 la tonelada', 'http://127.0.0.1:8080/images/limonpersa.jpg')}}>Launch Agro Product: Limon Persa</button>
+                <button className="margin-right" onClick={() => { this.deployAgroAsset('Garbanzo', 'Garbanzo muy chiquito y oloroso', '$5 la tonelada', 'http://127.0.0.1:8080/images/garbanzo.jpg')}}>Launch Agro Product: Garbanzo</button>
+                <button onClick={() => { this.getAssetArray()}}>Get All Agro Products</button>
             </div>
         )
     }
