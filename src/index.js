@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { MetamaskProvider } from '@0xcert/ethereum-metamask-provider'
 //import { BitskiProvider } from '@0xcert/ethereum-bitski-backend-provider';
-import { BitskiProvider } from '@0xcert/ethereum-bitski-frontend-provider';
+//import { BitskiProvider } from '@0xcert/ethereum-bitski-frontend-provider';
 import { schema88 } from '@0xcert/conventions'
 import { Cert } from '@0xcert/cert'
 // Assets Ledgers are groups of tokens that are managed by certain users just like mods in a chat to do what's required
@@ -47,50 +47,37 @@ class Main extends React.Component {
     async setExistingLedger(newLedger) {
         const ledgerAddress = newLedger
         const ledger = AssetLedger.getInstance(this.state.provider, ledgerAddress)
+        console.log('Asset ledger information: ', await ledger.getInfo())
         await this.setState({ledger})
     }
 
-    async setAssetArray(idAsset, description, image, name, price) {
-        /*const assets = await this.getUserBalance()
-        let assetArray = []
-        // Generate an array for each asset to create the corresponding AgroProduct components
-        for(let i = 0; i < assets; i++) {
-            assetArray.push(i)
-        }
-        assetArray = assetArray.map(index => (
-            <AgroProduct
-                assetId={index}
-                key={index}
-                description={description}
-                image={image}
-                name={name}
-                price={price}
-            />
-        ))
-        await this.setState({assets: assetArray})*/
-        await this.setState({assets: [...this.state.assets, (<AgroProduct assetId={idAsset} key={idAsset} description={description} image={image} name={name} price={price}/>)]})
+    async setAssetArray(idAsset, imprint, description, image, name, price) {
+        await this.setState({assets: [...this.state.assets, (<AgroProduct assetId={idAsset} imprint= {imprint} key={idAsset} description={description} image={image} name={name} price={price}/>)]})
         
     }
 
     async getAssetArray() {
-        const assets = await this.getUserBalance()
-        let assetArray = []
+        const numberOfAssets = await this.getUserBalance()
+        console.log('numberOfAssets: ', numberOfAssets);
+        console.log('Length of assets: ', this.state.assets.length)
+        
         // Generate an array for each asset to create the corresponding AgroProduct components
-        for(let i = 0; i < assets; i++) {
-            assetArray.push(i)
-        }
-        assetArray = this.state.assets.map(index => (
+        for(let i = 0; i < numberOfAssets; i++) {
+            //assetArray.push(i)
             <AgroProduct
-                assetId={this.state.assets.assetId}
-                key={this.state.assets.key}
-                description={this.state.assets.description}
-                image={this.state.assets.image}
-                name={this.state.assets.name}
-                price={this.state.assets.price}
+                assetId={i + 1}
+                key={i + 1}
+                description={this.state.assets[i].props.description}
+                image={this.state.assets[i].props.image}
+                name={this.state.assets[i].props.name}
+                price={this.state.assets[i].props.price}
             />
-        ))
-        //await this.setState({assets: assetArray})    
-        return assetArray 
+            console.log('Asset: ', this.state.assets[i])
+            console.log('Description: ', this.state.assets[i].props.description)
+            console.log('Image: ', this.state.assets[i].props.image)
+            console.log('Name: ', this.state.assets[i].props.name)
+            console.log('Price: ', this.state.assets[i].props.price)
+        }
     }
 
     // To get user ERC721 token balance
@@ -128,6 +115,7 @@ class Main extends React.Component {
         try {
             deployedLedger = await AssetLedger.deploy(this.state.provider, recipe).then(mutation => {
                 console.log('Deploying new asset ledger, it may take a few minutes.')
+                console.log('Transaction Hash ', mutation.id)
                 return mutation.complete()
             })
             console.log('Ledger ', deployedLedger)
@@ -154,6 +142,9 @@ class Main extends React.Component {
             image: imageAsset,
         }
         const imprint = await cert.imprint(asset)
+        const expose= await cert.expose(asset, [['name'], ['image']])
+
+        console.log('Expose', expose)
         console.log('New imprint', imprint)
         const assetId = parseInt(await this.getUserBalance()) + 1
         console.log('id', assetId)
@@ -163,10 +154,11 @@ class Main extends React.Component {
             receiverId: web3.eth.accounts[0]
         }).then(mutation => {
             console.log('Creating new agro asset, this may take a while...')
+            console.log('Transaction Hash ', mutation.id)
             return mutation.complete()
         }).then(result => {
             console.log('Deployed!')
-            this.setAssetArray(assetId, asset.description, asset.image, asset.name, asset.price)  // Update the user interface to show the deployed asset
+            this.setAssetArray(assetId, imprint, asset.description, asset.image, asset.name, asset.price)  // Update the user interface to show the deployed asset
         }).catch(e => {
             console.log('Error', e)
         })
@@ -191,18 +183,71 @@ class Main extends React.Component {
 class AgroProduct extends React.Component {
     constructor() {
         super()
+
+        this.state = {
+            provider: {},
+            ledger: {}
+        }
     }
+
+    // Run your desired functions here
+    async componentDidMount() {
+        await this.setProvider()
+        const newLedger = await this.deployNewLedger()
+        await this.setExistingLedger(newLedger)
+        //await this.setAssetArray()
+    }
+
+    async setProvider() {
+        const provider = new MetamaskProvider()
+        if (!(await provider.isEnabled())) await provider.enable()
+        await this.setState({provider})
+    }
+
+    async transferAsset(assetId) {
+        console.log('Asset Id: ', assetId)
+        const ledgerAddress = newLedger
+        const ledger = AssetLedger.getInstance(this.state.provider, ledgerAddress)
+        const mutation = await ledger.transferAsset({
+            receiverId: web3.eth.accounts[1],
+            id: assetId,
+        }).then((mutation) => {
+            console.log('Transfering agro asset, this may take a while...')
+            return mutation.complete();
+        }).then(result => {
+            console.log('Trasfered!')
+            //this.setAssetArray(assetId, asset.imprint, asset.description, asset.image, asset.name, asset.price)  // Update the user interface to show the deployed asset
+        }).catch(e => {
+            console.log('Error', e)
+        })
+    }
+
+    buyAsset() {
+        Console.log('Buying agro asset...')
+    }   
 
     render() {
         return (
             <div className="art-container">
                 <img className="art-image" src={this.props.image} width="100px" />
                 <div className="art-owner">Id Producto: {this.props.assetId}</div>
-                <div className="art-ower">Descripción: {this.props.description}</div>
+                <div className="art-owner">Descripción: {this.props.description}</div>
                 <div className="art-owner">Precio: {this.props.price}</div>
                 <div className="art-owner">Productor: {web3.eth.accounts[0]}</div>
-                <br />
-            </div>
+                <div className="art-owner">Imprint (Fingerprint): {this.props.imprint}</div>
+                <div>
+                    <br />
+                    <hr />
+                    <br />
+                </div>
+                <div>
+                    <button onClick={() => { this.buyAsset(this.props.assetId)}}>Buy</button>
+                    <button onClick={() => { this.transferAsset(this.props.assetId)}}>Transfer</button>
+                </div>
+                <div>
+                    <br />
+                </div>
+            </div> 
         )
     }
 }
