@@ -52,7 +52,7 @@ class Main extends React.Component {
     }
 
     async setAssetArray(idAsset, imprint, description, image, name, price) {
-        await this.setState({assets: [...this.state.assets, (<AgroProduct assetId={idAsset} imprint= {imprint} key={idAsset} description={description} image={image} name={name} price={price}/>)]})
+        await this.setState({assets: [...this.state.assets, (<AgroProduct assetId={idAsset} imprint= {imprint} key={idAsset} description={description} image={image} name={name} price={price} ledger={this.state.ledger}/>)]})
         
     }
 
@@ -71,12 +71,14 @@ class Main extends React.Component {
                 image={this.state.assets[i].props.image}
                 name={this.state.assets[i].props.name}
                 price={this.state.assets[i].props.price}
+                ledger={this.state.ledger}
             />
             console.log('Asset: ', this.state.assets[i])
             console.log('Description: ', this.state.assets[i].props.description)
             console.log('Image: ', this.state.assets[i].props.image)
             console.log('Name: ', this.state.assets[i].props.name)
             console.log('Price: ', this.state.assets[i].props.price)
+            console.log('Ledger: ', this.state.ledger)
         }
     }
 
@@ -193,8 +195,11 @@ class AgroProduct extends React.Component {
     // Run your desired functions here
     async componentDidMount() {
         await this.setProvider()
-        const newLedger = await this.deployNewLedger()
-        await this.setExistingLedger(newLedger)
+        const ledger = this.props.ledger
+        await this.setState({ledger})
+        console.log('AgroProduct Ledger address: ', ledger.id);
+        //const newLedger = await this.deployNewLedger()
+        //await this.setExistingLedger(newLedger)
         //await this.setAssetArray()
     }
 
@@ -206,24 +211,28 @@ class AgroProduct extends React.Component {
 
     async transferAsset(assetId) {
         console.log('Asset Id: ', assetId)
-        const ledgerAddress = newLedger
-        const ledger = AssetLedger.getInstance(this.state.provider, ledgerAddress)
-        const mutation = await ledger.transferAsset({
-            receiverId: web3.eth.accounts[1],
+        console.log('Ledger of Product 1: ', this.state.ledger.id)
+        const ledgerOfProduct = AssetLedger.getInstance(this.state.provider, this.state.ledger.id)
+        console.log('Ledger of Product 2: ', this.state.ledger.id)
+        console.log('Asset ledger of product information: ', await ledgerOfProduct.getInfo())
+        console.log('Addres 1 - sender ', web3.eth.accounts[0])
+        console.log('Address 2 - receiver ', web3.eth.accounts[1])
+        console.log('Acccounts ', web3.eth.accounts)
+        const mutation = await ledgerOfProduct.transferAsset({
+            receiverId: '0xeBc86a584f283E9e4400f3F74FB9dA2802E2eBe1',
             id: assetId,
         }).then((mutation) => {
             console.log('Transfering agro asset, this may take a while...')
             return mutation.complete();
         }).then(result => {
             console.log('Trasfered!')
-            //this.setAssetArray(assetId, asset.imprint, asset.description, asset.image, asset.name, asset.price)  // Update the user interface to show the deployed asset
         }).catch(e => {
-            console.log('Error', e)
+            console.log('Error - ', e)
         })
     }
 
     buyAsset() {
-        Console.log('Buying agro asset...')
+        console.log('Buying agro asset...')
     }   
 
     render() {
